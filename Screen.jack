@@ -1,0 +1,367 @@
+// This file is part of nand2tetris, as taught in The Hebrew University, and
+// was written by Aviv Yaish. It is an extension to the specifications given
+// [here](https://www.nand2tetris.org) (Shimon Schocken and Noam Nisan, 2017),
+// as allowed by the Creative Common Attribution-NonCommercial-ShareAlike 3.0
+// Unported [License](https://creativecommons.org/licenses/by-nc-sa/3.0/).
+
+/**
+ * A library of functions for displaying graphics on the screen.
+ * The Hack physical screen consists of 256 rows (indexed 0..255, top to bottom)
+ * of 512 pixels each (indexed 0..511, left to right). The top left pixel on 
+ * the screen is indexed (0,0).
+ */
+class Screen {
+
+		static Array screen;
+        static boolean color;
+        static Array two_in_power_of;
+        static int bits_in_register;
+
+        /** Initializes the Screen. */
+        function void init() 
+        {	
+        	let screen = 16384;
+        	let color = true;
+        	let bits_in_register = 16;
+        	let two_in_power_of = Array.new(16);
+        	let two_in_power_of[0] = 1;
+	        let two_in_power_of[1] = 2;
+	        let two_in_power_of[2] = 4;
+	        let two_in_power_of[3] = 8;
+	        let two_in_power_of[4] = 16;
+	        let two_in_power_of[5] = 32;
+	        let two_in_power_of[6] = 64;
+	        let two_in_power_of[7] = 128;
+	        let two_in_power_of[8] = 256;
+	        let two_in_power_of[9] = 512;
+	        let two_in_power_of[10] = 1024;
+	        let two_in_power_of[11] = 2048;
+	        let two_in_power_of[12] = 4096;
+	        let two_in_power_of[13] = 8192;
+	        let two_in_power_of[14] = 16384;
+	        let two_in_power_of[15] = 16384 + 16384; // not enough bits to write 32768
+        	return;
+        }
+
+        /** Erases the entire screen. */
+        function void clearScreen() 
+        {
+        	var int idx;
+        	var int end_screen_map;
+
+        	let idx = 0;
+        	let end_screen_map = 8192;
+
+        	while (idx < end_screen_map) 
+        	{
+        		let screen[idx] = 0;
+        		let idx = idx + 1;
+        	}
+
+        	return;
+        }
+
+        /** Sets the current color, to be used for all subsequent drawXXX commands.
+         *    Black is represented by true, white by false. */
+        function void setColor(boolean b)
+        {
+        	let color = b;
+        	return;
+        }
+
+        /** Draws the (x,y) pixel, using the current color. */
+        function void drawPixel(int x, int y) 
+        {
+            // For this function, you will need to calculate the value x%16.
+            // It should be calculated quickly without using multiplication or
+            // division, using exactly one basic math/logical operation.
+            // In addition, calculating 16384 + y * 32 + x/16 should not use
+            // division or multiplication.
+            // Pseudocode:
+            // 1. Compute the RAM address where the (x,y) pixel is
+            //    represented: 16384 + (32*y) + (x/16).
+            // 2. Use Memory.peek to get the 16-bit value of this address
+            // 3. Use some bitwise operation to set (only) the bit that corresponds
+            //    to the pixel to the current color.
+            // 4. Use Memory.poke to write the modified 16-bit value to the RAM
+            // address.
+
+        	var int address;
+        	var int address_value;
+        	var int modulo_val;
+            let address = 16384 + (^^^^^y) + (####x);
+            let address_value = Memory.peek(address);
+            let modulo_val = two_in_power_of[x & 15]; //get the modulo value then create the 2^ that value to turn that modulo 16 bit on
+            
+            if(color)
+            {
+            	do Memory.poke(address,(address_value | modulo_val)); 
+            }
+            else
+            {
+            	do Memory.poke(address,(address_value & (~(modulo_val))));
+            }
+            return;
+        }
+
+        function void draw_Vetrical_Line(int x, int y1, int y2)
+        {
+
+        	var int length;
+        	var int y;
+        	let length = Math.abs(y2 - y1);
+        	let y = Math.min(y1, y2);
+
+        	while (length > -1)
+        	{
+        		do Screen.drawPixel(x,y);
+        		let y = y + 1;
+        		let length = length - 1;
+        	}
+
+        	return;
+
+        }
+
+        function void draw_Positive_Diagonal_Line(int x1, int y1, int x2, int y2)
+        {
+        	var int x;
+        	var int y;
+        	var int dx;
+        	var int dy;
+        	var int a;
+        	var int b;
+        	var int diff;
+
+        	let x = x1;
+        	let y = y1;
+        	let dx = x2 - x1;
+        	let dy = y2 - y1;
+        	let a = 0;
+        	let b = 0;
+        	let diff = 0;
+
+        	while ((~(a > dx)) & (~(b > dy)))
+        	{
+        		do Screen.drawPixel(x+a,y+b);
+
+        		if(diff < 0)
+        		{
+        			let a = a + 1;
+        			let diff = diff + dy;
+        		}
+        		else
+        		{
+        			let b = b + 1;
+        			let diff = diff - dx;
+        		}
+        	}
+        	return;
+
+        }
+
+        function void draw_Negative_Diagonal_Line(int x1, int y1, int x2, int y2) 
+        {
+        	var int x;
+        	var int y;
+        	var int dx;
+        	var int dy;
+        	var int a;
+        	var int b;
+        	var int diff;
+
+        	let x = x1;
+        	let y = y1;
+        	let dx = x2 - x1;
+        	let dy = y2 - y1;
+        	let a = 0;
+        	let b = 0;
+        	let diff = 0;
+
+        	while ((~(a > dx)) & (~(b <	 dy)))
+        	{
+        		do Screen.drawPixel(x+a,y+b);
+
+        		if(diff < 0)
+        		{
+        			let a = a + 1;
+        			let diff = diff - dy;
+        		}
+        		else
+        		{
+        			let b = b - 1;
+        			let diff = diff - dx;
+        		}
+        	}
+        	return;
+        
+        }
+
+        function void draw_Horizontal_Line(int x1, int x2, int y1) 
+        {
+            var int starting_address;
+            var int pixels_to_color_in_the_first_register;
+            var int total_pixels_to_color;
+
+            let starting_address = (^^^^^y1) + (####x1);
+            let total_pixels_to_color = (x2 - x1) + 1;
+            let pixels_to_color_in_the_first_register = Math.min(bits_in_register - (x1 & 15), total_pixels_to_color);
+
+            //color the needed pixels in the first register
+            if (~(pixels_to_color_in_the_first_register = bits_in_register))
+            {
+            	while ((pixels_to_color_in_the_first_register > 0))
+            	{
+            		do Screen.drawPixel(x1,y1);
+            		let pixels_to_color_in_the_first_register = pixels_to_color_in_the_first_register - 1;
+            		let total_pixels_to_color = total_pixels_to_color - 1;
+            		let x1 = x1 + 1;
+            	}
+
+            	let starting_address = starting_address + 1;
+            }
+
+            while (total_pixels_to_color > 15)
+        	{
+        		let screen[starting_address] = color;
+        		let total_pixels_to_color = total_pixels_to_color - bits_in_register;
+        		let x1 = x1 + bits_in_register;
+        		let starting_address = starting_address + 1;
+        	}
+
+    		while (total_pixels_to_color > 0)
+    		{
+    			do Screen.drawPixel(x1,y1);
+    			let x1 = x1 + 1;
+    			let total_pixels_to_color = total_pixels_to_color - 1;
+    		}
+           
+        	return;
+        }
+
+        function boolean calculate_slope(int x1, int y1, int x2, int y2)
+        {
+        	var int dy;
+			var int dx;
+			var boolean slope;
+
+            let dy = y2 - y1;
+            let dx = x2 - x1;
+
+            if ((dx > 0 & dy > 0) | (dx < 0 & dy < 0))
+            {
+            	let slope = true;
+            }
+            else
+            {
+            	let slope = false;
+            }
+
+            return slope;
+        }
+
+        /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
+        function void drawLine(int x1, int y1, int x2, int y2) 
+        {
+            // The case where x1 != x2 and y1 != y2 should be implemented without
+            // multiplication or division.
+            // Pseudocode:
+            // 1. let x = x1, y = y1, a = 0, b = 0, diff = 0
+            // 2. Compute dx and dy
+            // 3. while ((a <= dx) and (b <= dy))
+            // 4.   do drawPixel(x+a, y+b)
+            // 5.   if (diff < 0) { let a=a+1, diff=diff+dy }
+            // 6.   else          { let b=b+1, diff=diff-dx }
+            //
+            // The case where y1 == y2 can be implemented efficiently by
+            // trying to draw as many pixels as possible in a single assignment,
+            // similarly to Fill in project 4.
+			
+            var boolean is_positive_slope;
+
+            let is_positive_slope = Screen.calculate_slope(x1,y1,x2,y2);
+
+            if (~(y1 = y2))
+            {
+            	if(x1 = x2)
+            	{
+            		do Screen.draw_Vetrical_Line(x1,Math.min(y1,y2),Math.max(y1,y2));
+            	}
+            	else
+            	{
+            		if (is_positive_slope)
+            		{	
+            			if (x1 < x2)
+            			{
+            				do Screen.draw_Positive_Diagonal_Line(x1,y1,x2,y2);
+            			}
+            			else
+            			{
+            				do Screen.draw_Positive_Diagonal_Line(x2,y2,x1,y1);
+            			}
+            		}
+            		else
+            		{
+            			if (x1 < x2)
+            			{
+            				do Screen.draw_Negative_Diagonal_Line(x1,y1,x2,y2);
+            			}
+            			else
+            			{
+            				do Screen.draw_Negative_Diagonal_Line(x2,y2,x1,y1);
+            			}
+            		}	
+            	}
+            }
+            else
+            {
+            	do Screen.draw_Horizontal_Line(Math.min(x1, x2),Math.max(x1,x2), y1);
+            }
+
+            return;
+        }
+
+        /** Draws a filled rectangle whose top left corner is (x1, y1)
+         * and bottom right corner is (x2,y2), using the current color. */
+        function void drawRectangle(int x1, int y1, int x2, int y2) 
+        {
+        	var int local_y;
+        	var int threshold;
+
+        	let local_y = y1;
+        	let threshold = (y2 + 1);
+
+        	while (local_y < threshold)
+        	{
+        		do Screen.drawLine(x1,local_y,x2,local_y);
+        		let local_y = local_y + 1;
+        	}
+        	return;
+        }
+
+        /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
+        function void drawCircle(int x, int y, int r) 
+        {
+            // This can be implemented efficiently by drawing multiple lines at each iteration.
+            // Pseudocode:
+            // 1. for (dy = -r ... r)
+            // 2.   let halfWidth = sqrt(r*r - dy*dy)
+            // 3.   do drawLine(x-halfWidth, y+dy, x+halfWidth, y+dy)
+
+        	var int dy;
+        	var int halfWidth;
+        	var int threshold;
+
+        	let dy = -r;
+        	let threshold = r + 1;
+
+        	while (dy < threshold)
+        	{
+        		let halfWidth = Math.sqrt((r*r) - (dy*dy));
+            	do Screen.drawLine(x-halfWidth, y+dy, x+halfWidth, y+dy);
+            	let dy = dy + 1;
+        	}
+
+            return;
+        }
+}
